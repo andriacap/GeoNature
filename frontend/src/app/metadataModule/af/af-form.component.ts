@@ -38,7 +38,7 @@ export class AfFormComponent implements OnInit {
     private actorFormS: ActorFormService,
     public metadataS: MetadataService,
     private metadataDataS: MetadataDataService
-  ) {}
+  ) { }
   ngOnInit() {
     // get the id from the route
     this._route.params
@@ -108,7 +108,7 @@ export class AfFormComponent implements OnInit {
     api
       .pipe(
         tap(() => {
-          this._commonService.translateToaster('success', 'MetaData.Datasetadded');
+          this._commonService.translateToaster('success', 'MetaData.AFadded');
           this.metadataS.getMetadata(); //rechargement de la liste de la page principale
         })
       )
@@ -128,9 +128,8 @@ export class AfFormComponent implements OnInit {
   }
 
   getPdf() {
-    const url = `${AppConfig.API_ENDPOINT}/meta/acquisition_frameworks/export_pdf/${
-      this.afFormS.acquisition_framework.getValue().id_acquisition_framework
-    }`;
+    const url = `${AppConfig.API_ENDPOINT}/meta/acquisition_frameworks/export_pdf/${this.afFormS.acquisition_framework.getValue().id_acquisition_framework
+      }`;
     window.open(url);
   }
 }

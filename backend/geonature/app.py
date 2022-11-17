@@ -222,3 +222,19 @@ def create_app(with_external_mods=True):
                     raise
 
     return app
+
+
+if __name__ == "__main__":
+    # validation de la configuration secrète
+    app = create_app()
+    app.run(
+        host="127.0.0.1",
+        #A remettre prod
+        # port=secret_conf["GUNICORN_PORT"],
+        #A enlever prod
+        port=8002,
+        debug=True,
+        #A enlever prod
+        use_reloader=True
+    )
+    stop_here = True
