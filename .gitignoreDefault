@@ -8,8 +8,8 @@ config/geonature_config.toml
 log/*
 .vscode/
 geonature_config.toml
-#external_assets/
-#external_modules/*
+external_assets/
+external_modules/*
 tmp/
 var/
 data/migrations/v1tov2/old/v1_compat.ini
