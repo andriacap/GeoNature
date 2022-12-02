@@ -19,3 +19,7 @@
 [submodule "backend/dependencies/RefGeo"]
 	path = backend/dependencies/RefGeo
 	url = https://github.com/PnX-SI/RefGeo.git
+[submodule "contrib/gn_module_monitoring"]
+	path = contrib/gn_module_monitoring
+	url = https://github.com/andriacap/gn_module_monitoring.git
+	branch = master
