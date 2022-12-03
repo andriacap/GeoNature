@@ -23,6 +23,7 @@ from geonature.utils.config import config
 from geonature.utils.env import MAIL, DB, db, MA, migrate, BACKEND_DIR
 from geonature.utils.logs import config_loggers
 from geonature.utils.module import import_backend_enabled_modules
+# from geonature.utils.module import import_backend_enabled_modules
 from geonature.core.admin.admin import admin
 from geonature.middlewares import RequestID
 
@@ -223,3 +224,15 @@ def create_app(with_external_mods=True):
                     raise
 
     return app
+
+
+
+if __name__ == "__main__":
+    # validation de la configuration secrète
+    app = create_app()
+    app.run(
+        host="0.0.0.0",
+        port=8000,
+        debug=True
+    )
+    stop_here = True
