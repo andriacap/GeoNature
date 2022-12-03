@@ -22,4 +22,4 @@
 [submodule "contrib/gn_module_monitoring"]
 	path = contrib/gn_module_monitoring
 	url = https://github.com/andriacap/gn_module_monitoring.git
-	branch = dev-suivi-eolien
+	branch = develop-ac
