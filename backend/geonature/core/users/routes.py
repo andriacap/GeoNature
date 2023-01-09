@@ -3,9 +3,9 @@ import requests
 import json
 
 
-from flask import Blueprint, request, current_app, Response, redirect
+from flask import Blueprint, request, current_app, Response, redirect, g
 from sqlalchemy.sql import distinct, and_
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, Forbidden
 
 from geonature.utils.env import DB
 from geonature.core.gn_permissions import decorators as permissions
@@ -23,7 +23,7 @@ from geonature.core.users.register_post_actions import (
 )
 
 from pypnusershub.env import REGISTER_POST_ACTION_FCT
-from pypnusershub.db.models import User
+from pypnusershub.db.models import User, Application
 from pypnusershub.db.models_register import TempUser
 from pypnusershub.routes_register import bp as user_api
 from pypnusershub.routes import check_auth
@@ -227,7 +227,11 @@ def inscription():
 
     data = request.get_json()
     # ajout des valeurs non présentes dans le form
-    data["id_application"] = current_app.config["ID_APPLICATION_GEONATURE"]
+    data["id_application"] = (
+        Application.query.filter_by(code_application=current_app.config["CODE_APPLICATION"])
+        .one()
+        .id_application
+    )
     data["groupe"] = False
     data["confirmation_url"] = config["API_ENDPOINT"] + "/users/after_confirmation"
 
@@ -276,7 +280,14 @@ def confirmation():
     if token is None:
         return {"message": "Token introuvable"}, 404
 
-    data = {"token": token, "id_application": current_app.config["ID_APPLICATION_GEONATURE"]}
+    data = {
+        "token": token,
+        "id_application": Application.query.filter_by(
+            code_application=current_app.config["CODE_APPLICATION"]
+        )
+        .one()
+        .id_application,
+    }
 
     r = s.post(
         url=config["API_ENDPOINT"] + "/pypn/register/post_usershub/valid_temp_user",
@@ -303,20 +314,22 @@ def after_confirmation():
 
 
 @routes.route("/role", methods=["PUT"])
-@permissions.check_cruved_scope("R", True)
+@permissions.check_cruved_scope("R")
 @json_resp
-def update_role(info_role):
+def update_role():
     """
     Modifie le role de l'utilisateur du token en cours
     """
     if not current_app.config["ACCOUNT_MANAGEMENT"].get("ENABLE_USER_MANAGEMENT", False):
         return {"message": "Page introuvable"}, 404
+
     data = dict(request.get_json())
 
-    user = DB.session.query(User).get(info_role.id_role)
+    user = g.current_user
 
-    if user is None:
-        return {"message": "Droit insuffisant"}, 403
+    # Prevent public-access user from updating its own information
+    if user.is_public:
+        raise Forbidden
 
     attliste = [k for k in data]
     for att in attliste:

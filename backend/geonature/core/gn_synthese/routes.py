@@ -1,7 +1,7 @@
 import json
 import datetime
 import time
-
+import re
 from collections import OrderedDict
 from warnings import warn
 
@@ -25,7 +25,6 @@ from utils_flask_sqla.generic import serializeQuery, GenericTable
 from utils_flask_sqla.response import to_csv_resp, to_json_resp, json_resp
 from utils_flask_sqla_geo.generic import GenericTableGeo
 
-
 from geonature.utils import filemanager
 from geonature.utils.env import DB
 from geonature.utils.errors import GeonatureApiError
@@ -35,20 +34,16 @@ from geonature.core.gn_meta.models import TDatasets
 
 from geonature.core.gn_synthese.models import (
     BibReportsTypes,
+    CorAreaSynthese,
+    DefaultsNomenclaturesValue,
     Synthese,
     TSources,
-    DefaultsNomenclaturesValue,
     VSyntheseForWebApp,
     VColorAreaTaxon,
     TReport,
 )
 from geonature.core.gn_synthese.synthese_config import MANDATORY_COLUMNS
-from geonature.core.taxonomie.models import (
-    Taxref,
-    TaxrefProtectionArticles,
-    TaxrefProtectionEspeces,
-    VMTaxrefListForautocomplete,
-)
+
 from geonature.core.gn_synthese.utils.query_select_sqla import SyntheseQuery
 
 from geonature.core.gn_permissions import decorators as permissions
@@ -59,8 +54,17 @@ from geonature.core.gn_permissions.tools import (
 
 from ref_geo.models import LAreas, BibAreasTypes
 
-from pypnusershub.db.tools import user_from_token
-from pypnusershub.db.models import User
+from apptax.taxonomie.models import (
+    Taxref,
+    bdc_statut_cor_text_area,
+    Taxref,
+    TaxrefBdcStatutCorTextValues,
+    TaxrefBdcStatutTaxon,
+    TaxrefBdcStatutText,
+    TaxrefBdcStatutType,
+    TaxrefBdcStatutValues,
+    VMTaxrefListForautocomplete,
+)
 
 
 routes = Blueprint("gn_synthese", __name__)
@@ -98,11 +102,13 @@ def get_observations_for_web(info_role):
 
     :param str info_role: Role used to get the associated filters, **TBC**
     :qparam str limit: Limit number of synthese returned. Defaults to NB_MAX_OBS_MAP.
+    :qparam str cd_ref_parent: filtre tous les taxons enfants d'un TAXREF cd_ref.
     :qparam str cd_ref: Filter by TAXREF cd_ref attribute
     :qparam str taxonomy_group2_inpn: Filter by TAXREF group2_inpn attribute
     :qparam str taxonomy_id_hab: Filter by TAXREF id_habitat attribute
-    :qparam str taxonomy_lr: Filter by TAXREF cd_ref attribute
-    :qparam str taxhub_attribut*: Generig TAXREF filter, given attribute & value
+    :qparam str taxhub_attribut*: filtre générique TAXREF en fonction de l'attribut et de la valeur.
+    :qparam str *_red_lists: filtre générique de listes rouges. Filtre sur les valeurs. Voir config.
+    :qparam str *_protection_status: filtre générique de statuts (BdC Statuts). Filtre sur les types. Voir config.
     :qparam str observers: Filter on observer
     :qparam str id_organism: Filter on organism
     :qparam str date_min: Start date
@@ -290,6 +296,7 @@ def get_one_synthese(scope, id_synthese):
 
     if not synthese.has_instance_permission(scope=scope):
         raise Forbidden()
+
     geofeature = synthese.as_geofeature(fields=Synthese.nomenclature_fields + fields)
     return jsonify(geofeature)
 
@@ -440,6 +447,7 @@ def export_observations_web(info_role):
     cruved = cruved_scope_for_user_in_module(info_role.id_role, module_code="SYNTHESE")[0]
     if cruved["R"] > cruved["E"]:
         synthese_query_class.filter_query_with_cruved(info_role)
+
     results = DB.session.execute(
         synthese_query_class.query.limit(current_app.config["SYNTHESE"]["NB_MAX_OBS_EXPORT"])
     )
@@ -544,7 +552,7 @@ def export_status(info_role):
     .. :quickref: Synthese;
 
     Get the CRUVED from 'R' action because we don't give observations X/Y but only statuts
-    and to be constistant with the data displayed in the web interface
+    and to be consistent with the data displayed in the web interface.
 
     Parameters:
         - HTTP-GET: the same that the /synthese endpoint (all the filter in web app)
@@ -554,55 +562,86 @@ def export_status(info_role):
     else:
         filters = {key: request.args.getlist(key) for key, value in request.args.items()}
 
-    # initalize the select object
+    # Initalize the select object
     q = select(
         [
             distinct(VSyntheseForWebApp.cd_nom),
-            Taxref.nom_complet,
             Taxref.cd_ref,
+            Taxref.nom_complet,
             Taxref.nom_vern,
-            TaxrefProtectionArticles.type_protection,
-            TaxrefProtectionArticles.article,
-            TaxrefProtectionArticles.intitule,
-            TaxrefProtectionArticles.arrete,
-            TaxrefProtectionArticles.date_arrete,
-            TaxrefProtectionArticles.url,
+            TaxrefBdcStatutTaxon.rq_statut,
+            TaxrefBdcStatutType.regroupement_type,
+            TaxrefBdcStatutType.lb_type_statut,
+            TaxrefBdcStatutText.cd_sig,
+            TaxrefBdcStatutText.full_citation,
+            TaxrefBdcStatutText.doc_url,
+            TaxrefBdcStatutValues.code_statut,
+            TaxrefBdcStatutValues.label_statut,
         ]
     )
 
-    synthese_query_class = SyntheseQuery(VSyntheseForWebApp, q, filters)
+    # Initialize SyntheseQuery class
+    synthese_query = SyntheseQuery(VSyntheseForWebApp, q, filters)
 
-    # add join
-    synthese_query_class.add_join(Taxref, Taxref.cd_nom, VSyntheseForWebApp.cd_nom)
-    synthese_query_class.add_join(
-        TaxrefProtectionEspeces,
-        TaxrefProtectionEspeces.cd_nom,
-        VSyntheseForWebApp.cd_nom,
-    )
-    synthese_query_class.add_join(
-        TaxrefProtectionArticles,
-        TaxrefProtectionArticles.cd_protection,
-        TaxrefProtectionEspeces.cd_protection,
-    )
-    # filter with all get params
-    q = synthese_query_class.filter_query_all_filters(info_role)
+    synthese_query.apply_all_filters(info_role)
 
-    data = DB.engine.execute(q)
+    # Add join
+    synthese_query.add_join(Taxref, Taxref.cd_nom, VSyntheseForWebApp.cd_nom)
+    synthese_query.add_join(
+        CorAreaSynthese,
+        CorAreaSynthese.id_synthese,
+        VSyntheseForWebApp.id_synthese,
+    )
+    synthese_query.add_join(
+        bdc_statut_cor_text_area, bdc_statut_cor_text_area.c.id_area, CorAreaSynthese.id_area
+    )
+    synthese_query.add_join(TaxrefBdcStatutTaxon, TaxrefBdcStatutTaxon.cd_ref, Taxref.cd_ref)
+    synthese_query.add_join(
+        TaxrefBdcStatutCorTextValues,
+        TaxrefBdcStatutCorTextValues.id_value_text,
+        TaxrefBdcStatutTaxon.id_value_text,
+    )
+    synthese_query.add_join_multiple_cond(
+        TaxrefBdcStatutText,
+        [
+            TaxrefBdcStatutText.id_text == TaxrefBdcStatutCorTextValues.id_text,
+            TaxrefBdcStatutText.id_text == bdc_statut_cor_text_area.c.id_text,
+        ],
+    )
+    synthese_query.add_join(
+        TaxrefBdcStatutType,
+        TaxrefBdcStatutType.cd_type_statut,
+        TaxrefBdcStatutText.cd_type_statut,
+    )
+    synthese_query.add_join(
+        TaxrefBdcStatutValues,
+        TaxrefBdcStatutValues.id_value,
+        TaxrefBdcStatutCorTextValues.id_value,
+    )
+
+    # Build query
+    q = synthese_query.build_query()
+
+    # Set enable status texts filter
+    q = q.where(TaxrefBdcStatutText.enable == True)
 
     protection_status = []
+    data = DB.engine.execute(q)
     for d in data:
         row = OrderedDict(
             [
-                ("nom_complet", d["nom_complet"]),
-                ("nom_vern", d["nom_vern"]),
                 ("cd_nom", d["cd_nom"]),
                 ("cd_ref", d["cd_ref"]),
-                ("type_protection", d["type_protection"]),
-                ("article", d["article"]),
-                ("intitule", d["intitule"]),
-                ("arrete", d["arrete"]),
-                ("date_arrete", d["date_arrete"]),
-                ("url", d["url"]),
+                ("nom_complet", d["nom_complet"]),
+                ("nom_vern", d["nom_vern"]),
+                ("type_regroupement", d["regroupement_type"]),
+                ("type", d["lb_type_statut"]),
+                ("territoire_application", d["cd_sig"]),
+                ("intitule_doc", re.sub("<[^<]+?>", "", d["full_citation"])),
+                ("code_statut", d["code_statut"]),
+                ("intitule_statut", d["label_statut"]),
+                ("remarque", d["rq_statut"]),
+                ("url_doc", d["doc_url"]),
             ]
         )
         protection_status.append(row)
@@ -612,12 +651,14 @@ def export_status(info_role):
         "nom_vern",
         "cd_nom",
         "cd_ref",
-        "type_protection",
-        "article",
-        "intitule",
-        "arrete",
-        "date_arrete",
-        "url",
+        "type_regroupement",
+        "type",
+        "territoire_application",
+        "intitule_doc",
+        "code_statut",
+        "intitule_statut",
+        "remarque",
+        "url_doc",
     ]
 
     return to_csv_resp(

@@ -5,24 +5,25 @@
 import logging
 from os import environ
 from collections import ChainMap
-import subprocess
+from pkg_resources import iter_entry_points
 
 import toml
 import click
 from flask.cli import run_command
 
-from geonature.utils.env import GEONATURE_VERSION, ROOT_DIR
+from geonature.utils.env import GEONATURE_VERSION
 from geonature.utils.command import (
     create_frontend_config,
-    tsconfig_templating,
-    tsconfig_app_templating,
 )
-from geonature.utils.config_schema import GnGeneralSchemaConf, GnPySchemaConf
 from geonature import create_app
 from geonature.core.gn_meta.mtd.mtd_utils import import_all_dataset_af_and_actors
+from geonature.utils.config import config
+from geonature.utils.config_schema import GnGeneralSchemaConf, GnPySchemaConf
+from geonature.utils.command import (
+    create_frontend_module_config,
+    build_frontend,
+)
 
-# from rq import Queue, Connection, Worker
-# import redis
 from flask.cli import FlaskGroup
 
 
@@ -45,25 +46,6 @@ def main(ctx):
 
 
 @main.command()
-@click.option(
-    "--input",
-    "input_file",
-    type=click.File("r"),
-)
-@click.option(
-    "--output",
-    "output_file",
-    type=click.File("w"),
-)
-def generate_frontend_config(input_file, output_file):
-    """
-    Génération des fichiers de configurations pour javascript
-    """
-    create_frontend_config(input_file, output_file)
-    log.info("Config successfully updated. Do not forget to rebuild frontend for production.")
-
-
-@main.command()
 @click.option("--host", default="0.0.0.0")
 @click.option("--port", default=8000)
 @click.pass_context
@@ -83,34 +65,72 @@ def dev_back(ctx, host, port):
 
 
 @main.command()
-def generate_frontend_tsconfig():
+@click.option(
+    "--input",
+    "input_file",
+    type=click.File("r"),
+)
+@click.option(
+    "--output",
+    "output_file",
+    type=click.File("w"),
+)
+def generate_frontend_config(input_file, output_file):
     """
-    Génere tsconfig du frontend
+    Génération des fichiers de configurations pour javascript
     """
-    tsconfig_templating()
+    create_frontend_config(input_file, output_file)
+    click.echo(
+        "Configuration générée. Pensez à rebuilder le frontend pour la production.", err=True
+    )
 
 
 @main.command()
-def generate_frontend_tsconfig_app():
+@click.argument("module_code")
+@click.option(
+    "--output",
+    "output_file",
+    type=click.File("w"),
+)
+def generate_frontend_module_config(module_code, output_file):
     """
-    Génere tsconfig.app du frontend/src
+    Génère la config frontend d'un module
+
+    Example:
+
+    - geonature generate-frontend-module-config OCCTAX
+
     """
-    tsconfig_app_templating()
+    create_frontend_module_config(module_code, output_file)
+    click.echo(
+        "Configuration générée. Pensez à rebuilder le frontend pour la production.", err=True
+    )
 
 
 @main.command()
+@click.option("--modules", type=bool, required=False, default=True)
 @click.option("--build", type=bool, required=False, default=True)
-def update_configuration(build):
+def update_configuration(modules, build):
     """
     Régénère la configuration du front et lance le rebuild.
     """
+    click.echo("Génération de la configuration du frontend :")
+    click.echo("  GeoNature … ", nl=False)
     create_frontend_config()
+    click.secho("OK", fg="green")
+    if modules:
+        for module_code_entry in iter_entry_points("gn_module", "code"):
+            module_code = module_code_entry.resolve()
+            click.echo(f"  Module {module_code} … ", nl=False)
+            if module_code in config["DISABLED_MODULES"]:
+                click.secho("désactivé, ignoré", fg="white")
+                continue
+            click.secho("OK", fg="green")
+            create_frontend_module_config(module_code)
     if build:
-        subprocess.run(
-            ["/bin/bash", "-i", "-c", "nvm use && npm run build"],
-            check=True,
-            cwd=str(ROOT_DIR / "frontend"),
-        )
+        click.echo("Rebuild du frontend …")
+        build_frontend()
+        click.secho("Rebuild du frontend terminé.", fg="green")
 
 
 @main.command()

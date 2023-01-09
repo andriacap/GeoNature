@@ -36,7 +36,14 @@ export class AuthService {
     private cruvedService: CruvedStoreService,
     private _routingService: RoutingService,
     private moduleService: ModuleService
-  ) {}
+  ) {
+    // Allow to use public access via a direct url, with query param "access=public"
+    this.route.queryParams.subscribe((params) => {
+      if ('access' in params && params['access'] == 'public' && AppConfig.PUBLIC_ACCESS_USERNAME) {
+        this.signinPublicUser();
+      }
+    });
+  }
 
   setCurrentUser(user) {
     localStorage.setItem('current_user', JSON.stringify(user));
@@ -72,6 +79,42 @@ export class AuthService {
     return this._http.put<any>(`${AppConfig.API_ENDPOINT}/users/password/new`, data);
   }
 
+  manageUser(data): any {
+    const userForFront = {
+      user_login: data.user.identifiant,
+      prenom_role: data.user.prenom_role,
+      id_role: data.user.id_role,
+      nom_role: data.user.nom_role,
+      nom_complet: data.user.nom_role + ' ' + data.user.prenom_role,
+      id_organisme: data.user.id_organisme,
+    };
+    this.setCurrentUser(userForFront);
+    this.loginError = false;
+    // Now that we are logged, we fetch the cruved again, and redirect once received
+    forkJoin({
+      modules: this.moduleService
+        .loadModules()
+        .pipe(tap((modules) => this._routingService.loadRoutes(modules))),
+    }).subscribe(() => {
+      this.isLoading = false;
+      let next = this.route.snapshot.queryParams['next'];
+      let route = this.route.snapshot.queryParams['route'];
+      // next means redirect to url
+      // route means navigate to angular route
+      if (next) {
+        if (route) {
+          window.location.href = next + '#' + route;
+        } else {
+          window.location.href = next;
+        }
+      } else if (route) {
+        this.router.navigateByUrl(route);
+      } else {
+        this.router.navigate(['']);
+      }
+    });
+  }
+
   signinUser(user: any) {
     this.isLoading = true;
 
@@ -80,41 +123,7 @@ export class AuthService {
       password: user.password,
     };
     this._http.post<any>(`${AppConfig.API_ENDPOINT}/auth/login`, options).subscribe(
-      (data) => {
-        const userForFront = {
-          user_login: data.user.identifiant,
-          prenom_role: data.user.prenom_role,
-          id_role: data.user.id_role,
-          nom_role: data.user.nom_role,
-          nom_complet: data.user.nom_role + ' ' + data.user.prenom_role,
-          id_organisme: data.user.id_organisme,
-        };
-        this.setCurrentUser(userForFront);
-        this.loginError = false;
-        // Now that we are logged, we fetch the cruved again, and redirect once received
-        forkJoin({
-          modules: this.moduleService
-            .loadModules()
-            .pipe(tap((modules) => this._routingService.loadRoutes(modules))),
-        }).subscribe(() => {
-          this.isLoading = false;
-          let next = this.route.snapshot.queryParams['next'];
-          let route = this.route.snapshot.queryParams['route'];
-          // next means redirect to url
-          // route means navigate to angular route
-          if (next) {
-            if (route) {
-              window.location.href = next + '#' + route;
-            } else {
-              window.location.href = next;
-            }
-          } else if (route) {
-            this.router.navigateByUrl(route);
-          } else {
-            this.router.navigate(['']);
-          }
-        });
-      },
+      (data) => this.manageUser(data),
       // error callback
       () => {
         this.isLoading = false;
@@ -123,6 +132,16 @@ export class AuthService {
     );
   }
 
+  signinPublicUser() {
+    this._http.post<any>(`${AppConfig.API_ENDPOINT}/auth/public_login`, {}).subscribe(
+      (data) => this.manageUser(data),
+      // error callback
+      () => {
+        this.isLoading = false;
+        this.loginError = true;
+      }
+    );
+  }
   signupUser(data: any): Observable<any> {
     const options = data;
     return this._http.post<any>(`${AppConfig.API_ENDPOINT}/users/inscription`, options);

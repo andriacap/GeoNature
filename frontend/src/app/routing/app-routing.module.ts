@@ -4,7 +4,7 @@ import { HomeContentComponent } from '../components/home-content/home-content.co
 import { PageNotFoundComponent } from '../components/page-not-found/page-not-found.component';
 import { AuthGuard } from '@geonature/routing/auth-guard.service';
 import { ModuleGuardService } from '@geonature/routing/module-guard.service';
-import { SignUpGuard } from '@geonature/modules/login/routes-guard.service';
+import { SignUpGuard, UserPublicGuard } from '@geonature/modules/login/routes-guard.service';
 import { SignUpComponent } from '../modules/login/sign-up/sign-up.component';
 
 import { UserManagementGuard } from '@geonature/modules/login/routes-guard.service';
@@ -12,6 +12,8 @@ import { NewPasswordComponent } from '../modules/login/new-password/new-password
 
 import { LoginComponent } from '../modules/login/login/login.component';
 import { NavHomeComponent } from '../components/nav-home/nav-home.component';
+import { NotificationComponent } from '../components/notification/notification.component';
+import { RulesComponent } from '../components/notification/rules/rules.component';
 
 const defaultRoutes: Routes = [
   {
@@ -79,6 +81,15 @@ const defaultRoutes: Routes = [
             /* webpackChunkName: "user" */
             '@geonature/userModule/user.module'
           ).then((m) => m.UserModule),
+        canActivate: [UserPublicGuard],
+      },
+      {
+        path: 'notification',
+        component: NotificationComponent,
+      },
+      {
+        path: 'notification/rules',
+        component: RulesComponent,
       },
       {
         path: '**',

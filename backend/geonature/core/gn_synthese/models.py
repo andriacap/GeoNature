@@ -130,6 +130,16 @@ class SyntheseQuery(GeoFeatureCollectionMixin, BaseQuery):
 
 
 @serializable
+class CorAreaSynthese(DB.Model):
+    __tablename__ = "cor_area_synthese"
+    __table_args__ = {"schema": "gn_synthese", "extend_existing": True}
+    id_synthese = DB.Column(
+        DB.Integer, ForeignKey("gn_synthese.synthese.id_synthese"), primary_key=True
+    )
+    id_area = DB.Column(DB.Integer, ForeignKey("ref_geo.l_areas.id_area"), primary_key=True)
+
+
+@serializable
 @geoserializable(geoCol="the_geom_4326", idCol="id_synthese")
 @shapeserializable
 class Synthese(DB.Model):
@@ -163,7 +173,7 @@ class Synthese(DB.Model):
     id_synthese = DB.Column(DB.Integer, primary_key=True)
     unique_id_sinp = DB.Column(UUID(as_uuid=True))
     unique_id_sinp_grp = DB.Column(UUID(as_uuid=True))
-    id_source = DB.Column(DB.Integer, ForeignKey(TSources.id_source))
+    id_source = DB.Column(DB.Integer, ForeignKey(TSources.id_source), nullable=False)
     source = relationship(TSources)
     id_module = DB.Column(DB.Integer, ForeignKey(TModules.id_module))
     module = DB.relationship(TModules)
@@ -312,7 +322,7 @@ class Synthese(DB.Model):
     meta_update_date = DB.Column(DB.DateTime)
     last_action = DB.Column(DB.Unicode)
 
-    areas = relationship(LAreas, secondary=corAreaSynthese)
+    areas = relationship(LAreas, secondary=corAreaSynthese, backref="synthese_obs")
     area_attachment = relationship(LAreas, foreign_keys=[id_area_attachment])
     validations = relationship(TValidations, backref="attached_row")
     last_validation = relationship(last_validation, uselist=False, viewonly=True)
@@ -333,16 +343,6 @@ class Synthese(DB.Model):
             return self.dataset.has_instance_permission(scope)
         elif scope == 3:
             return True
-
-
-@serializable
-class CorAreaSynthese(DB.Model):
-    __tablename__ = "cor_area_synthese"
-    __table_args__ = {"schema": "gn_synthese", "extend_existing": True}
-    id_synthese = DB.Column(
-        DB.Integer, ForeignKey("gn_synthese.synthese.id_synthese"), primary_key=True
-    )
-    id_area = DB.Column(DB.Integer, ForeignKey(LAreas.id_area), primary_key=True)
 
 
 @serializable
@@ -396,7 +396,7 @@ class VSyntheseForWebApp(DB.Model):
     )
     unique_id_sinp = DB.Column(UUID(as_uuid=True))
     unique_id_sinp_grp = DB.Column(UUID(as_uuid=True))
-    id_source = DB.Column(DB.Integer)
+    id_source = DB.Column(DB.Integer, nullable=False)
     entity_source_pk_value = DB.Column(DB.Integer)
     id_dataset = DB.Column(DB.Integer)
     dataset_name = DB.Column(DB.Integer)

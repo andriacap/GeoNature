@@ -37,8 +37,6 @@ export class SyntheseComponent implements OnInit {
   ) {}
 
   loadAndStoreData(formParams) {
-    console.log(formParams);
-
     this.searchService.dataLoaded = false;
     this.searchService.getSyntheseData(formParams).subscribe(
       (data) => {
@@ -100,6 +98,9 @@ export class SyntheseComponent implements OnInit {
       this._fs.selectedCdRefFromTree = [];
       this._fs.selectedTaxonFromRankInput = [];
       this._fs.selectedtaxonFromComponent = [];
+      this._fs.selectedRedLists = [];
+      this._fs.selectedStatus = [];
+      this._fs.selectedTaxRefAttributs = [];
       this.loadAndStoreData(initialFilter);
     });
   }

@@ -59,6 +59,9 @@ echo "############### Installation des paquets systèmes ###############"
 echo "Installation de l'environnement logiciel..."
 sudo apt-get install -y unzip git postgresql postgis python3-pip python3-venv python3-dev libpq-dev libgdal-dev libffi-dev libpangocairo-1.0-0 apache2 redis || exit 1
 
+if [ "${mode}" = "dev" ]; then
+    sudo apt-get install -y xvfb || exit 1
+fi
 
 # Apache configuration
 sudo a2enmod rewrite || exit 1
@@ -244,6 +247,10 @@ if [ "$install_usershub_app" = true ]; then
     fi
 fi
 
+# Upgrade depending branches like taxhub and usershub
+source "${GEONATURE_DIR}/backend/venv/bin/activate"
+geonature db autoupgrade
+deactivate
 
 # Apache vhost for GeoNature, TaxHub and UsersHub
 envsubst '${DOMAIN_NAME}' < "${GEONATURE_DIR}/install/assets/vhost_apache.conf" | sudo tee /etc/apache2/sites-available/geonature.conf || exit 1

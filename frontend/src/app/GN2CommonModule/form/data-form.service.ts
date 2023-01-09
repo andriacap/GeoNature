@@ -145,8 +145,14 @@ export class DataFormService {
     });
   }
 
-  getTaxonInfo(cd_nom: number) {
-    return this._http.get<Taxon>(`${AppConfig.API_TAXHUB}/taxref/${cd_nom}`);
+  getTaxonInfo(cd_nom: number, areasStatus?: Array<string>) {
+    let query_string = new HttpParams();
+    if (areasStatus) {
+      query_string = query_string.append('areas_status', areasStatus.join(','));
+    }
+    return this._http.get<Taxon>(`${AppConfig.API_TAXHUB}/taxref/${cd_nom}`, {
+      params: query_string,
+    });
   }
 
   getTaxonAttributsAndMedia(cd_nom: number, id_attributs?: Array<number>) {
@@ -228,10 +234,6 @@ export class DataFormService {
 
   getTaxhubBibAttributes() {
     return this._http.get<any>(`${AppConfig.API_TAXHUB}/bibattributs/`);
-  }
-
-  getTaxonomyLR() {
-    return this._http.get<any>(`${AppConfig.API_TAXHUB}/taxref/bib_lr`);
   }
 
   getTaxonomyHabitat() {
@@ -327,6 +329,21 @@ export class DataFormService {
     return this._http.get<any>(`${AppConfig.API_ENDPOINT}/geo/areas`, { params: params });
   }
 
+  getAreasTypes() {
+    return this._http.get<any>(`${AppConfig.API_ENDPOINT}/geo/types`);
+  }
+
+  autocompleteRefGeo(params) {
+    let queryString: HttpParams = new HttpParams();
+    for (let key in params) {
+      queryString = queryString.set(key, params[key]);
+    }
+
+    return this._http.get<any>(`${AppConfig.API_ENDPOINT}/geo/areas`, {
+      params: queryString,
+    });
+  }
+
   getValidationHistory(uuid_attached_row) {
     return this._http.get<any>(
       `${AppConfig.API_ENDPOINT}/gn_commons/history/${uuid_attached_row}`,
@@ -349,13 +366,13 @@ export class DataFormService {
     });
   }
 
-  getAcquisitionFrameworksList(searchTerms = {}) {
+  getAcquisitionFrameworksList(selectors = {}, params = {}) {
     let queryString: HttpParams = new HttpParams();
-    for (let key in searchTerms) {
-      queryString = queryString.set(key, searchTerms[key]);
+    for (let key in selectors) {
+      queryString = queryString.set(key, selectors[key]);
     }
 
-    return this._http.get<any>(`${AppConfig.API_ENDPOINT}/meta/acquisition_frameworks`, {
+    return this._http.post<any>(`${AppConfig.API_ENDPOINT}/meta/acquisition_frameworks`, params, {
       params: queryString,
     });
   }
@@ -612,6 +629,10 @@ export class DataFormService {
       );
   }
 
+  getStatusValues(statusType: String) {
+    return this._http.get<any>(`${AppConfig.API_TAXHUB}/bdc_statuts/status_values/${statusType}`);
+  }
+
   getProfile(cdRef) {
     return this._http.get<any>(`${AppConfig.API_ENDPOINT}/gn_profiles/valid_profile/${cdRef}`);
   }
@@ -625,8 +646,8 @@ export class DataFormService {
   }
 
   /* A partir d'un id synthese, retourne si l'observation match avec les différents
-   critère d'un profil
-  */
+ critère d'un profil
+*/
   getProfileConsistancyData(idSynthese) {
     return this._http.get<any>(
       `${AppConfig.API_ENDPOINT}/gn_profiles/consistancy_data/${idSynthese}`
@@ -635,5 +656,15 @@ export class DataFormService {
 
   controlProfile(data) {
     return this._http.post<any>(`${AppConfig.API_ENDPOINT}/gn_profiles/check_observation`, data);
+  }
+
+  getStatusType(statusTypes: String[]) {
+    let queryString: HttpParams = new HttpParams();
+    if (statusTypes) {
+      queryString = queryString.set('codes', statusTypes.join(','));
+    }
+    return this._http.get<any>(`${AppConfig.API_TAXHUB}/bdc_statuts/status_types`, {
+      params: queryString,
+    });
   }
 }
