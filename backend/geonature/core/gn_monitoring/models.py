@@ -147,6 +147,11 @@ class TBaseSites(DB.Model):
         User, primaryjoin=(User.id_role == id_inventor), foreign_keys=[id_inventor]
     )
 
+    id_categorie = DB.Column(
+    DB.ForeignKey('gn_monitoring.bib_categorie_site.id_categorie'),
+    nullable=True,  # TODO: see if True or False
+    )
+
     t_base_visits = relationship("TBaseVisits", lazy="select", cascade="all,delete-orphan")
 
     modules = DB.relationship(
