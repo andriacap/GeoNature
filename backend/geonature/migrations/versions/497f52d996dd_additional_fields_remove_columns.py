@@ -1,7 +1,7 @@
 """TAdditionalFields : remove useless columns and values
 
 Revision ID: 497f52d996dd
-Revises: 4cf3fd5d06f5
+Revises: 8888e5cce63b
 Create Date: 2023-01-04 16:02:45.953579
 
 """
