@@ -13,17 +13,21 @@ export class SidenavItemsComponent implements OnInit {
   public version = null;
   public home_page: any;
   public exportModule: any;
+  public isOpenedSideNav: boolean;
 
   constructor(
     public moduleService: ModuleService,
     public _sidenavService: SideNavService,
-    public config: ConfigService
+    public config: ConfigService,
   ) {
     this.version = this.config.GEONATURE_VERSION;
   }
 
   ngOnInit() {
     this.home_page = this._sidenavService.getHomeItem();
+    this._sidenavService.currentSideNavStatus$.subscribe((isOpened) => {
+      this.isOpenedSideNav = isOpened;
+    });
   }
 
   setHome() {

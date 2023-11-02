@@ -96,6 +96,7 @@ export class NavHomeComponent implements OnInit, OnDestroy {
   }
 
   closeSideBar() {
+    this.sideNavService.opened == true ? this.sideNavService.changeStatusSideNav(false) : this.sideNavService.changeStatusSideNav(true);
     this.sideNavService.sidenav.toggle();
     if (this.config.NOTIFICATIONS_ENABLED == true) {
       // Update notification count to display in badge

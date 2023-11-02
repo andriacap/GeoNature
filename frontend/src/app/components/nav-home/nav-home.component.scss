@@ -27,3 +27,23 @@
 #logo-structure {
   max-height: 60px;
 }
+
+.mat-sidenav:not(.mat-drawer-opened) {
+  max-width: 65px !important;
+  visibility: visible !important;
+  display: block !important;
+  transform : none !important;
+  transition: ease-in 2s !important;
+  .logo {
+    padding: 15px 5px !important;
+  }
+  .module-name {
+    display: none !important;
+  }
+  .navbar-footer{
+    display: none !important;
+  }
+}
+.mat-sidenav:not(.mat-drawer-opened) ~ .mat-sidenav-content {
+  margin-left: 65px !important;
+}

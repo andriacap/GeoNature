@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MatSidenav } from '@angular/material/sidenav';
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 @Injectable()
 export class SideNavService {
@@ -13,9 +13,11 @@ export class SideNavService {
   public modules: Array<any>;
   public home_page;
   public exportModule;
+  opened$ = new BehaviorSubject<boolean>(true);
+  currentSideNavStatus$ = this.opened$.asObservable();
 
   constructor() {
-    this.opened = false;
+    this.opened = true;
   }
 
   setSideNav(sidenav: MatSidenav) {
@@ -36,5 +38,11 @@ export class SideNavService {
 
   toggleSideNav() {
     this.sidenav.toggle();
+    this.opened == true ? this.changeStatusSideNav(false) : this.changeStatusSideNav(true);
+  }
+
+  changeStatusSideNav(isOpened: boolean) {
+    this.opened = isOpened;
+    this.opened$.next(isOpened);
   }
 }
