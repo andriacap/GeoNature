@@ -95,7 +95,7 @@ export class NavHomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  closeSideBar() {
+  toggleSideBar() {
     this.sideNavService.opened == true ? this.sideNavService.changeStatusSideNav(false) : this.sideNavService.changeStatusSideNav(true);
     this.sideNavService.sidenav.toggle();
     if (this.config.NOTIFICATIONS_ENABLED == true) {

@@ -45,12 +45,15 @@ a:hover {
   text-decoration: none;
 }
 
+
 .active-list-item {
   background-color: #717274;
-  .module-name {
-    color: #ffff !important; /* Note: You could also use a custom theme */
-  }
-  i {
+  .module-name, i {
     color: #ffff !important; /* Note: You could also use a custom theme */
   }
 }
+
+.sidenav-item:hover {
+  border-right: 4px solid #717274 !important;
+}
+

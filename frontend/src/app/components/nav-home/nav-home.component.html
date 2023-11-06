@@ -8,11 +8,11 @@
       <button
         class="mat-elevation-z1 mr-2"
         mat-icon-button
-        matTooltip="Ouvrir le menu principal"
-        (click)="closeSideBar()"
+        [matTooltip]="(sideNavService.opened ? 'Fermer' : 'Ouvrir') +  ' le menu principal'"
+        (click)="toggleSideBar()"
         data-qa="pnx-home-content-sidebar-open-button"
       >
-        <mat-icon aria-label="Ouvrir le menu principal">menu</mat-icon>
+        <mat-icon aria-label="Menu principal">{{ sideNavService.opened ? 'arrow_back_ios' : 'menu'}}</mat-icon>
       </button>
 
       <span class="mx-2">
@@ -42,43 +42,9 @@
           else publicAccessUser
         "
       >
-        <ng-container
-          *ngIf="
-            !config.CAS_PUBLIC.CAS_AUTHENTIFICATION &&
-              config.ACCOUNT_MANAGEMENT.ENABLE_USER_MANAGEMENT;
-            else noUserManagement
-          "
-        >
-          <button
-            class="mx-1"
-            mat-raised-button
-            matTooltip="Ouvrir le menu de mon profil"
-            [matMenuTriggerFor]="userMenu"
-          >
-            <mat-icon> person </mat-icon>
-            <span class="user-name">
-              {{ currentUser?.user_login }}
-            </span>
-          </button>
 
-          <mat-menu #userMenu>
-            <a
-              mat-menu-item
-              matTooltip="Accéder aux paramètres de mon compte"
-              matTooltipPosition="before"
-              routerLink="/user"
-            >
-              {{ 'MyAccount' | translate }}
-            </a>
-          </mat-menu>
-        </ng-container>
 
-        <ng-template #noUserManagement>
-          <mat-icon> person </mat-icon>
-          <span class="user-name">
-            {{ currentUser?.user_login }}
-          </span>
-        </ng-template>
+
 
         <!-- add notification only if notification enabled -->
         <ng-container *ngIf="config.NOTIFICATIONS_ENABLED == true">
@@ -94,6 +60,16 @@
           </a>
         </ng-container>
       </ng-container>
+
+      <a
+      class="mx-2 mat-elevation-z1"
+      mat-icon-button
+      matTooltip="Ouvrir la documentation"
+      [href]="currentDocUrl"
+      target="_blank"
+    >
+      <mat-icon id="documentation_link">library_books</mat-icon>
+    </a>
 
       <ng-template #publicAccessUser>
         <mat-icon> accessibility_new </mat-icon>
@@ -144,25 +120,60 @@
         </mat-menu>
       </ng-container>
 
-      <a
-        class="mx-2 mat-elevation-z1"
-        mat-icon-button
-        matTooltip="Ouvrir la documentation"
-        [href]="currentDocUrl"
-        target="_blank"
-      >
-        <mat-icon id="documentation_link">library_books</mat-icon>
-      </a>
-
+      <ng-container
+      *ngIf="
+        !config.CAS_PUBLIC.CAS_AUTHENTIFICATION &&
+          config.ACCOUNT_MANAGEMENT.ENABLE_USER_MANAGEMENT;
+        else noUserManagement
+      "
+    >
       <button
-        class="mx-2 mat-elevation-z1"
-        mat-icon-button
-        matTooltip="{{ 'LogOut' | translate }}"
-        (click)="authService.logout()"
-        data-qa="pnx-home-content-exit-button"
+        class="mx-1"
+        mat-raised-button
+        matTooltip="Ouvrir le menu de mon profil"
+        [matMenuTriggerFor]="userMenu"
       >
-        <mat-icon>exit_to_app</mat-icon>
+        <mat-icon> person </mat-icon>
+        <span class="user-name">
+          {{ currentUser?.user_login }}
+        </span>
       </button>
+
+      <mat-menu #userMenu>
+        <button  
+        mat-menu-item
+        matTooltip="Accéder aux paramètres de mon compte"
+        matTooltipPosition="before"
+        routerLink="/user">
+        <span>{{ 'MyAccount' | translate }}</span>
+        </button>
+      </mat-menu>
+    </ng-container>
+
+      <ng-template #noUserManagement>
+        <button
+        class="mx-1"
+        mat-raised-button
+        matTooltip="Ouvrir le menu de mon profil"
+        [matMenuTriggerFor]="userMenuWithoutManagement"
+      >
+        <mat-icon> person </mat-icon>
+        <span class="user-name">
+          {{ currentUser?.user_login }}
+        </span>
+      </button>
+
+        <mat-menu #userMenuWithoutManagement>
+          <button
+          mat-menu-item
+          (click)="authService.logout()"
+          data-qa="pnx-home-content-exit-button"
+        >
+          <mat-icon>exit_to_app</mat-icon>
+          <span>{{ 'LogOut' | translate }}</span>
+        </button>
+        </mat-menu>
+      </ng-template>
     </mat-toolbar>
 
     <div class="app-content">

@@ -9,8 +9,9 @@
 #app-toolbar {
   [mat-raised-button],
   [mat-icon-button] {
-    background-color: white !important;
+    // background-color: white !important;
     outline: none;
+    box-shadow: none;
   }
   .user-name {
     font-size: 15px;
