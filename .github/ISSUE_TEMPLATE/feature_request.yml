@@ -1,0 +1,27 @@
+name: Demande de fonctionnalité
+description: Proposer une évolution ou une nouvelle fonctionnalité
+labels: [enhancement]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Besoin utilisateur / métier
+      description: Quel problème cela résout-il ? Pour qui ?
+    validations:
+      required: true
+  - type: textarea
+    id: criteres
+    attributes:
+      label: Critères d’acceptation
+      description: Cas d’usage, critères mesurables, contraintes.
+      placeholder: DoD, règles de gestion, perf, sécurité...
+  - type: textarea
+    id: dev_envisages
+    attributes:
+      label: Développements envisagés
+      description: Approche technique (API, DB, frontend, migrations...).
+  - type: textarea
+    id: explications
+    attributes:
+      label: Explications des modifications envisagées
+      description: Pourquoi cette approche ? Alternatives considérées ? Ajoutez des sources externes de référence.

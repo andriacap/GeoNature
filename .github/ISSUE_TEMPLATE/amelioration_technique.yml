@@ -1,0 +1,36 @@
+name: Amélioration technique / Performance / Sécurité
+description: Tâches techniques avec impact qualité, perf, sécurité, observabilité
+labels: [tech-debt]
+body:
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte
+      description: Code concerné, symptômes, métriques, contraintes.
+    validations:
+      required: true
+  - type: textarea
+    id: dev_envisages
+    attributes:
+      label: Développements envisagés
+      description: Détaillez les étapes, impacts API/DB/UX, risques et plan de test.
+      placeholder: Pagination par curseur, OnPush+trackBy, session.execute, cookies HttpOnly, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: explications
+    attributes:
+      label: Explications des modifications envisagées
+      description: Justification (pourquoi cette solution ?), avec sources externes (docs officielles, OWASP, Angular, PostgreSQL, etc.).
+      placeholder: Lien(s) doc, articles techniques, références officielles
+    validations:
+      required: true
+  - type: checkboxes
+    id: impacts
+    attributes:
+      label: Impacts
+      options:
+        - label: Migration DB
+        - label: Changement API (breaking)
+        - label: Mise à jour documentation
+        - label: Ajout/MAJ de tests
