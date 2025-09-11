@@ -1,0 +1,45 @@
+name: Rapport de bug
+description: Signaler un comportement inattendu ou une régression
+labels: [bug]
+body:
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte
+      description: Décrivez le contexte, la version et l’environnement.
+      placeholder: Version, module, environnement (prod/dev),...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: Étapes minimales pour reproduire le problème.
+      placeholder: 1. ...\n2. ...\n3. ...
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: comportement_attendu
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traces
+      description: Collez les extraits pertinents (masquez les secrets).
+      render: shell
+  - type: textarea
+    id: dev_envisages
+    attributes:
+      label: Développements envisagés
+      description: Pistes de correction/mitigation.
+      placeholder: Ex. rollback partiel, guard, validation supplémentaire...
+  - type: textarea
+    id: explications
+    attributes:
+      label: Explications des modifications envisagées
+      description: Pourquoi cette solution est préférable (joindre sources externes si possible).
+      placeholder: Lien(s) doc, best practices, références...
